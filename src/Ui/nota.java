@@ -16,6 +16,7 @@ public class nota extends javax.swing.JFrame {
      */
     public nota() {
         initComponents();
+        setLocationRelativeTo(null);
     }
 
     /**

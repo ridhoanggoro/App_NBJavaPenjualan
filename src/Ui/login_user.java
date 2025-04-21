@@ -8,7 +8,12 @@ package Ui;
 import java.sql.*;
 import javax.swing.JOptionPane;
 import java.awt.event.KeyEvent;
-import Koneksi.koneksi;
+import Utility.koneksi;
+import Utility.sessionManager;
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatIntelliJLaf;
+import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.themes.FlatMacLightLaf;
 
 /**
  *
@@ -22,6 +27,7 @@ public class login_user extends javax.swing.JFrame {
      */
     public login_user() {
         initComponents();
+        setLocationRelativeTo(null);
     }
     
     protected void processLogin() {
@@ -41,7 +47,7 @@ public class login_user extends javax.swing.JFrame {
             ResultSet hasil = pstmt.executeQuery();
 
             if (hasil.next()) {
-                SessionManager.setUserLoggedIn(hasil.getString("id_kasir"));
+                sessionManager.setUserLoggedIn(hasil.getString("id_kasir"));
                 JOptionPane.showMessageDialog(this, "Login Berhasil");
                 this.setVisible(false);
                 new main_form().setVisible(true); 
@@ -157,18 +163,12 @@ public class login_user extends javax.swing.JFrame {
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    javax.swing.UIManager.setLookAndFeel(new FlatDarkLaf());
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(login_user.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(login_user.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(login_user.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(login_user.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(barang.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
 

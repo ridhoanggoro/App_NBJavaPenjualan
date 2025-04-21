@@ -5,30 +5,55 @@
  */
 package Ui;
 
+import com.formdev.flatlaf.themes.FlatMacLightLaf;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import javax.swing.SwingUtilities;
+import Utility.sessionManager;
+import javax.swing.JOptionPane;
 /**
  *
  * @author ridho.naibaho
  */
 public class main_form extends javax.swing.JFrame {
-
+    private SimpleDateFormat formatter;
+    private volatile boolean running = true;
     /**
      * Creates new form main_form
      */
     public main_form() {
         initComponents();
         checkSession();
+        setLocationRelativeTo(null);
+        
+        formatter = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+        
+        Thread threadJam = new Thread(() -> {
+            while (running) {
+                Date sekarang = new Date();
+                SwingUtilities.invokeLater(() -> lblCurrentTime.setText(formatter.format(sekarang)));
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    running = false;
+                }
+            }
+        });
+        threadJam.start();
     }
     
     private void checkSession() {
-        if (!SessionManager.isLoggedIn()) {
+        if (!sessionManager.isLoggedIn()) {
             login_user loginForm = new login_user();
             loginForm.setVisible(true);
             this.dispose(); 
         } else {
-            String userId = SessionManager.getLoggedInUserId();
-            jLabel3.setText("Welcome Back : "+ userId);
+            String userId = sessionManager.getLoggedInUserId();
+            lblLoginUser.setText("Welcome Back : "+ userId +" ");
         }
     }
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -41,29 +66,44 @@ public class main_form extends javax.swing.JFrame {
 
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
+        jToolBar1 = new javax.swing.JToolBar();
+        lblLoginUser = new javax.swing.JLabel();
+        lblCurrentTime = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
+        jMenu3 = new javax.swing.JMenu();
+        mnLogout = new javax.swing.JMenuItem();
         jMenu1 = new javax.swing.JMenu();
         mnPelanggan = new javax.swing.JMenuItem();
         mnBarang = new javax.swing.JMenuItem();
         mnKasir = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         mnNota = new javax.swing.JMenuItem();
-        jMenu3 = new javax.swing.JMenu();
-        mnLogout = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jLabel1.setFont(new java.awt.Font("Calibri", 1, 14)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tw Cen MT", 1, 18)); // NOI18N
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Pemrograman Visual");
 
-        jLabel2.setFont(new java.awt.Font("Calibri", 1, 24)); // NOI18N
+        jLabel2.setFont(new java.awt.Font("Tw Cen MT", 1, 24)); // NOI18N
         jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel2.setText("Sistem Aplikasi Penjualan");
 
-        jLabel3.setFont(new java.awt.Font("Tw Cen MT", 2, 18)); // NOI18N
-        jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jToolBar1.setRollover(true);
+        jToolBar1.add(lblLoginUser);
+        jToolBar1.add(lblCurrentTime);
+
+        jMenu3.setText("File");
+
+        mnLogout.setText("Logout");
+        mnLogout.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mnLogoutActionPerformed(evt);
+            }
+        });
+        jMenu3.add(mnLogout);
+
+        jMenuBar1.add(jMenu3);
 
         jMenu1.setText("Master");
 
@@ -105,27 +145,16 @@ public class main_form extends javax.swing.JFrame {
 
         jMenuBar1.add(jMenu2);
 
-        jMenu3.setText("File");
-
-        mnLogout.setText("Logout");
-        mnLogout.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                mnLogoutActionPerformed(evt);
-            }
-        });
-        jMenu3.add(mnLogout);
-
-        jMenuBar1.add(jMenu3);
-
         setJMenuBar(jMenuBar1);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 894, Short.MAX_VALUE)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jToolBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 874, Short.MAX_VALUE)
                 .addContainerGap())
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, 894, Short.MAX_VALUE))
@@ -133,11 +162,10 @@ public class main_form extends javax.swing.JFrame {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(164, Short.MAX_VALUE)
-                .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 76, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 97, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(135, 135, 135))
+                .addContainerGap(126, Short.MAX_VALUE)
+                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 216, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(111, 111, 111)
+                .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                     .addContainerGap(212, Short.MAX_VALUE)
@@ -169,10 +197,13 @@ public class main_form extends javax.swing.JFrame {
     }//GEN-LAST:event_mnNotaActionPerformed
 
     private void mnLogoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnLogoutActionPerformed
-        SessionManager.logoutUser();
-        login_user loginForm = new login_user();
-        loginForm.setVisible(true);
-        this.dispose(); 
+        int ok = JOptionPane.showConfirmDialog(null, "Anda yakin ingin keluar aplikasi ?", "Keluar", JOptionPane.YES_NO_OPTION);
+        if (ok == JOptionPane.YES_OPTION) { 
+            sessionManager.logoutUser();
+            login_user loginForm = new login_user();
+            loginForm.setVisible(true);
+            this.dispose(); 
+        }
     }//GEN-LAST:event_mnLogoutActionPerformed
 
     /**
@@ -187,18 +218,12 @@ public class main_form extends javax.swing.JFrame {
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    javax.swing.UIManager.setLookAndFeel(new FlatMacLightLaf());
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(main_form.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(main_form.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(main_form.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(main_form.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(barang.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
 
@@ -213,11 +238,13 @@ public class main_form extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenu jMenu3;
     private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JToolBar jToolBar1;
+    private javax.swing.JLabel lblCurrentTime;
+    private javax.swing.JLabel lblLoginUser;
     private javax.swing.JMenuItem mnBarang;
     private javax.swing.JMenuItem mnKasir;
     private javax.swing.JMenuItem mnLogout;
