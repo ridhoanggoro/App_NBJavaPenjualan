@@ -36,7 +36,7 @@ public class login_user extends javax.swing.JFrame {
             return;
         }
 
-        String sql = "SELECT id_kasir FROM kasir WHERE id_kasir=? AND password=MD5(?)"; 
+        String sql = "SELECT id_kasir, nama_kasir FROM kasir WHERE id_kasir=? AND password=MD5(?)"; 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             pstmt.setString(2, password);
@@ -45,6 +45,7 @@ public class login_user extends javax.swing.JFrame {
 
             if (hasil.next()) {
                 sessionManager.setUserLoggedIn(hasil.getString("id_kasir"));
+                sessionManager.setNameUserLoggedIn(hasil.getString("nama_kasir"));
                 JOptionPane.showMessageDialog(this, "Login Berhasil");
                 this.setVisible(false);
                 new main_form().setVisible(true); 

@@ -11,6 +11,7 @@ package Utility;
  */
 public class sessionManager {
     private static String loggedInUserId = null;
+    private static String loggedInUserName = null;
 
     public static void setUserLoggedIn(String userId) {
         loggedInUserId = userId;
@@ -18,6 +19,14 @@ public class sessionManager {
 
     public static String getLoggedInUserId() {
         return loggedInUserId;
+    }
+    
+    public static void setNameUserLoggedIn(String username) {
+        loggedInUserName = username; 
+    }
+    
+    public static String getLoggedInUserName() {
+        return loggedInUserName;
     }
 
     public static boolean isLoggedIn() {
