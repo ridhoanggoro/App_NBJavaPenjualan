@@ -25,7 +25,7 @@ public class koneksi {
         String url = "jdbc:mysql://localhost/db_kasir";
         
         try {
-            conn = DriverManager.getConnection(url, "root", "");
+            conn = DriverManager.getConnection(url, "root", "5L!bpGzGCP5f0Ql/");
             System.out.println("Berhasil connect DB"); 
         } catch (SQLException e) {
             System.out.println("Gagal connect DB : " + e);  

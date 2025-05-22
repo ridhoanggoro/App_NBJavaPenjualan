@@ -8,7 +8,11 @@ package Ui;
 import java.sql.Connection;
 import Utility.koneksi;
 import Utility.sessionManager;
+import java.awt.event.KeyEvent;
 import java.sql.*;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 import javax.swing.JOptionPane;
 import javax.swing.JSpinner;
 import javax.swing.table.DefaultTableModel;
@@ -18,11 +22,32 @@ import javax.swing.table.DefaultTableModel;
  */
 public class nota extends javax.swing.JFrame {
     public String id, namaPelanggan, jenis, telp, alamat;
-    public String kdBarang, namaBarang, jenisBarang, hargaBeli, hargaJual;
-    private Connection conn = new koneksi().openKoneksi();
-    private DefaultTableModel tabMode;
+    public String kdBarang, namaBarang, jenisBarang;
+    public double hargaBeli, hargaJual;
     private final String userId = sessionManager.getLoggedInUserId();
     private final String namaKasir = sessionManager.getLoggedInUserName();
+    NumberFormat numberFormatID = NumberFormat.getNumberInstance(new Locale("id", "ID"));
+    private Connection conn = new koneksi().openKoneksi();
+    DefaultTableModel tabMode = new DefaultTableModel(
+    new Object[]{"Kode Barang", "Nama", "Harga Beli", "Harga Jual", "Qty", "Total"}, 0) {
+    
+    @Override
+    public Class<?> getColumnClass(int columnIndex) {
+        switch (columnIndex) {
+                case 2: // Harga Beli
+                case 3: // Harga Jual
+                case 5: // Total
+                    return Double.class;
+                case 4: // Qty
+                    return Integer.class;
+                default:
+                    return String.class;
+            }
+        }
+    };
+
+        
+
     /**
      * Creates new form nota
      */
@@ -39,8 +64,6 @@ public class nota extends javax.swing.JFrame {
     protected void setAktif() {
         txtQty.requestFocus();
         txtTgl.setEditor(new JSpinner.DateEditor(txtTgl, "yyyy/MM/dd"));
-        Object[] baris = {"Kode Barang", "Nama", "Harga Beli", "Harga Jual", "Qty", "Total"};
-        tabMode = new DefaultTableModel(null, baris);
         tblTransaksi.setModel(tabMode);
     }
     
@@ -54,23 +77,30 @@ public class nota extends javax.swing.JFrame {
         txtQty.setText("");
         txtTotal.setText("");
         txtTotalHarga.setText("");
+        txtNamaP.setText("");
+        
+        int rowCount = tabMode.getRowCount();
+        for (int i = rowCount - 1; i >= 0; i--) {
+            tabMode.removeRow(i);
+        }
+
     }
     
     protected void autoNumber() {
         try {
-            String sql = "SELECT MAX(id_nota) FROM nota"; // More efficient: get only the max
+            String sql = "SELECT MAX(id_nota) FROM nota"; 
             Statement st = conn.createStatement();
             ResultSet rs = st.executeQuery(sql);
 
             if (rs.next()) {
-                String lastId = rs.getString(1); // Get the first column of the result
+                String lastId = rs.getString(1); 
                 if (lastId != null) {
-                    String prefix = lastId.substring(0, 2); // "IN"
-                    int number = Integer.parseInt(lastId.substring(2)) + 1; // Extract and increment
-                    String formattedNumber = String.format("%04d", number); // Ensure 4 digits with leading zeros
+                    String prefix = lastId.substring(0, 2); 
+                    int number = Integer.parseInt(lastId.substring(2)) + 1; 
+                    String formattedNumber = String.format("%04d", number); 
                     txtIDNota.setText(prefix + formattedNumber);
                 } else {
-                    txtIDNota.setText("IN0001"); // Handle the case where the table is empty
+                    txtIDNota.setText("IN0001"); 
                 }
             } else {
                  txtIDNota.setText("IN0001");
@@ -78,10 +108,34 @@ public class nota extends javax.swing.JFrame {
             rs.close();
             st.close();
 
-        } catch (SQLException e) { // Use SQLException for database-related exceptions
+        } catch (SQLException e) { 
             JOptionPane.showMessageDialog(null, "Error generating auto number: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace(); // Very important: print the stack trace for debugging
-            txtIDNota.setText("IN0001"); // added default
+            e.printStackTrace(); 
+            txtIDNota.setText("IN0001"); 
+        }
+    }
+    
+    protected void cariBarang(String kdBarang) {
+        String sql = "SELECT nama_barang, harga_b, harga_j FROM barang WHERE kd_barang = ?"; 
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, kdBarang);
+            ResultSet hasil = pstmt.executeQuery();
+
+            if (hasil.next()) {
+                txtNamaBarang.setText(hasil.getString("nama_barang"));
+                txtHargaB.setText(hasil.getString("harga_b"));
+                txtHargaJ.setText(hasil.getString("harga_j"));
+            } else {
+                txtNamaBarang.setText("");
+                txtHargaB.setText("");
+                txtHargaJ.setText("");
+                JOptionPane.showMessageDialog(null, "Barang dengan kode '" + kdBarang + "' tidak ditemukan.");
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Terjadi kesalahan saat mencari data: " + e.getMessage());
+            e.printStackTrace(); 
         }
     }
 
@@ -98,18 +152,25 @@ public class nota extends javax.swing.JFrame {
         pB.brg = this;
         txtKodeBarang.setText(kdBarang);
         txtNamaBarang.setText(namaBarang);
-        txtHargaB.setText(hargaBeli);
-        txtHargaJ.setText(hargaJual);
+        txtHargaB.setText(String.format("%.2f", hargaBeli));
+        txtHargaJ.setText(String.format("%.2f", hargaJual));
         txtQty.requestFocus();
     }
     
     public void hitung() {
-        int total = 0;
+        double total = 0; 
         for (int i = 0; i < tblTransaksi.getRowCount(); i++) {
-            int amount = Integer.valueOf(tblTransaksi.getValueAt(i, 5).toString());
-            total += amount;
+            Object value = tblTransaksi.getValueAt(i, 5);
+            if (value != null) {
+                try {
+                    double amount = Double.valueOf(value.toString()); 
+                    total += amount;
+                } catch (NumberFormatException e) {
+                    System.err.println("Error parsing nilai amount: " + value + " - " + e.getMessage());
+                }
+            }
         }
-        txtTotal.setText(Integer.toString(total));
+        txtTotalHarga.setText(String.format("%.2f", total)); 
     }
 
     /**
@@ -210,6 +271,12 @@ public class nota extends javax.swing.JFrame {
         btnTambah.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnTambahActionPerformed(evt);
+            }
+        });
+
+        txtKodeBarang.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                txtKodeBarangKeyPressed(evt);
             }
         });
 
@@ -365,6 +432,11 @@ public class nota extends javax.swing.JFrame {
         jScrollPane3.setViewportView(tblTransaksi);
 
         btnHapus.setText("Hapus");
+        btnHapus.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnHapusActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
@@ -390,10 +462,25 @@ public class nota extends javax.swing.JFrame {
         );
 
         btnSimpan.setText("Simpan");
+        btnSimpan.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSimpanActionPerformed(evt);
+            }
+        });
 
         btnBatal.setText("Batal");
+        btnBatal.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBatalActionPerformed(evt);
+            }
+        });
 
         btnKeluar.setText("Keluar");
+        btnKeluar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnKeluarActionPerformed(evt);
+            }
+        });
 
         jLabel15.setText("Total Harga");
 
@@ -503,17 +590,17 @@ public class nota extends javax.swing.JFrame {
             String qtyText = txtQty.getText().trim();
 
             if (hargaJText.isEmpty() || qtyText.isEmpty()) {
-                txtTotal.setText("0"); // Atau tindakan lain jika input kosong
+                txtTotal.setText("0");
                 return;
             }
 
-            int hargaJ = Integer.parseInt(hargaJText);
-            int qty = Integer.parseInt(qtyText);
-            int total = hargaJ * qty;
-            txtTotal.setText(String.valueOf(total));
+            double hargaJ = Double.parseDouble(hargaJText);
+            double qty = Double.parseDouble(qtyText);
+            double total = hargaJ * qty;
+            txtTotal.setText(String.format("%.2f", total)); 
 
         } catch (NumberFormatException e) {
-            txtTotal.setText("Error"); // Atau tampilkan pesan error yang lebih informatif
+            txtTotal.setText("Error");
             System.err.println("Error parsing harga atau kuantitas: " + e.getMessage());
         }
     }//GEN-LAST:event_txtQtyActionPerformed
@@ -532,19 +619,19 @@ public class nota extends javax.swing.JFrame {
                 return; // Hentikan fungsi jika ada kolom yang kosong
             }
 
-            int hargaJ;
-            int hargaB;
+            double hargaJ;
+            double hargaB;
             int qty;
-            int total;
+            double total;
 
             try {
-                hargaJ = Integer.parseInt(hargaJText);
-                hargaB = Integer.parseInt(hargaBText);
+                hargaJ = Double.parseDouble(hargaJText);
+                hargaB = Double.parseDouble(hargaBText);
                 qty = Integer.parseInt(qtyText);
-                total = hargaJ * qty; // Hitung total berdasarkan harga jual dan kuantitas
+                total = hargaJ * qty; 
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(this, "Input harga dan kuantitas harus berupa angka.", "Error", JOptionPane.ERROR_MESSAGE);
-                return; // Hentikan fungsi jika format angka salah
+                return; 
             }
 
             tabMode.addRow(new Object[]{kode, nama, hargaJ, hargaB, qty, total});
@@ -556,7 +643,7 @@ public class nota extends javax.swing.JFrame {
             txtHargaB.setText("");
             txtHargaJ.setText("");
             txtQty.setText("");
-            txtTotal.setText(String.valueOf(total)); // Set nilai total yang sudah dihitung
+            txtTotal.setText(""); 
             hitung(); // Panggil fungsi hitung (pastikan fungsi ini melakukan hal yang benar)
 
         } catch (Exception e) {
@@ -565,6 +652,95 @@ public class nota extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Terjadi kesalahan saat menambahkan data.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_btnTambahActionPerformed
+
+    private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusActionPerformed
+        int index = tblTransaksi.getSelectedRow();
+        if (index != -1) {
+            tabMode.removeRow(index);
+            tblTransaksi.setModel(tabMode);
+            hitung();
+        } else {
+            JOptionPane.showMessageDialog(this, "Silakan pilih data yang ingin dihapus.", "Peringatan", JOptionPane.WARNING_MESSAGE);
+        }
+    }//GEN-LAST:event_btnHapusActionPerformed
+
+    private void btnKeluarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnKeluarActionPerformed
+        dispose();
+    }//GEN-LAST:event_btnKeluarActionPerformed
+
+    private void btnBatalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBatalActionPerformed
+        setKosong();
+        setAktif();
+        autoNumber();
+    }//GEN-LAST:event_btnBatalActionPerformed
+
+    private void txtKodeBarangKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtKodeBarangKeyPressed
+        if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+            cariBarang(txtKodeBarang.getText().toString());
+        }
+    }//GEN-LAST:event_txtKodeBarangKeyPressed
+
+    private void btnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanActionPerformed
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String fd = sdf.format(txtTgl.getValue());
+
+        String sqlNota = "INSERT INTO nota (id_nota, tgl_nota, id_pelanggan, id_kasir) VALUES (?, ?, ?, ?)";
+        String sqlDetail = "INSERT INTO detail_nota (id_nota, kd_barang, harga_b, harga_j, qty) VALUES (?, ?, ?, ?, ?)";
+
+        try {
+            conn.setAutoCommit(false); // Mulai transaksi
+
+            // Simpan ke tabel nota
+            try (PreparedStatement statNota = conn.prepareStatement(sqlNota)) {
+                statNota.setString(1, txtIDNota.getText());
+                statNota.setString(2, fd);
+                statNota.setString(3, txtId.getText());
+                statNota.setString(4, lblIDKasir.getText());
+                statNota.executeUpdate();
+            }
+
+            // Simpan ke tabel detail_nota
+            int rowCount = tblTransaksi.getRowCount();
+            try (PreparedStatement statDetail = conn.prepareStatement(sqlDetail)) {
+                for (int i = 0; i < rowCount; i++) {
+                    String kodeBarang = tblTransaksi.getValueAt(i, 0).toString();
+                    double hargaBeli = (Double) tblTransaksi.getValueAt(i, 2);
+                    double hargaJual = (Double) tblTransaksi.getValueAt(i, 3);
+                    int qty = (Integer) tblTransaksi.getValueAt(i, 4);
+
+                    statDetail.setString(1, txtIDNota.getText());
+                    statDetail.setString(2, kodeBarang);
+                    statDetail.setDouble(3, hargaBeli);
+                    statDetail.setDouble(4, hargaJual);
+                    statDetail.setInt(5, qty);
+
+                    statDetail.addBatch(); // Gunakan batch untuk efisiensi
+                }
+                statDetail.executeBatch();
+            }
+
+            conn.commit(); // Simpan semua perubahan
+            JOptionPane.showMessageDialog(this, "Data berhasil disimpan.");
+
+        } catch (Exception e) {
+            try {
+                conn.rollback(); // Batalkan jika ada error
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            JOptionPane.showMessageDialog(this, "Gagal menyimpan data: " + e.getMessage());
+        } finally {
+            try {
+                conn.setAutoCommit(true); // Kembalikan ke mode default
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        setKosong();
+        setAktif();
+        autoNumber();
+    }//GEN-LAST:event_btnSimpanActionPerformed
 
     /**
      * @param args the command line arguments

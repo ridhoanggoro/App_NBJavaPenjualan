@@ -30,9 +30,25 @@ public class popupbarang extends javax.swing.JFrame {
         populateDataTable();
     }
     
+    DefaultTableModel tabmode = new DefaultTableModel(
+    new Object[]{"Kode", "Nama", "Jenis", "Harga Beli", "Harga Jual", "Stok"}, 0) {
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            switch (columnIndex) {
+                case 3:
+                case 4: 
+                    return Double.class;
+                case 5: 
+                    return Integer.class;
+                default:
+                    return String.class;
+            }
+        }
+    };
+
+    
     protected void populateDataTable() {
-        String[] kolom = {"Kode Barang", "Nama", "Jenis", "Harga Beli", "Harga Jual", "Stok"};
-        DefaultTableModel tabmode = new DefaultTableModel(null, kolom);
+
         String qry = txtCari.getText();
         String sql = "SELECT * FROM barang WHERE kd_barang LIKE ? OR nama_barang LIKE ? ORDER BY nama_barang ASC";
 
@@ -45,9 +61,9 @@ public class popupbarang extends javax.swing.JFrame {
                         hasil.getString("kd_barang"),
                         hasil.getString("nama_barang"),
                         hasil.getString("jenis"),
-                        hasil.getString("harga_b"),
-                        hasil.getString("harga_j"),
-                        hasil.getString("stok")
+                        hasil.getDouble("harga_b"),
+                        hasil.getDouble("harga_j"),
+                        hasil.getInt("stok")
                 });
             }
             tblBarang.setModel(tabmode);
@@ -147,8 +163,8 @@ public class popupbarang extends javax.swing.JFrame {
         brg.kdBarang = tblBarang.getValueAt(tabelBarang, 0).toString();
         brg.namaBarang = tblBarang.getValueAt(tabelBarang, 1).toString();
         brg.jenisBarang = tblBarang.getValueAt(tabelBarang, 2).toString();
-        brg.hargaBeli = tblBarang.getValueAt(tabelBarang, 3).toString();
-        brg.hargaJual = tblBarang.getValueAt(tabelBarang, 4).toString();
+        brg.hargaBeli = Double.parseDouble(tblBarang.getValueAt(tabelBarang, 3).toString());
+        brg.hargaJual = Double.parseDouble(tblBarang.getValueAt(tabelBarang, 4).toString());
         brg.itemTerpilihBrg();
         this.dispose();
     }//GEN-LAST:event_tblBarangMouseClicked
